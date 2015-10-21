@@ -188,6 +188,18 @@ namespace BuildStartProject
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
+            var sbManager = (IVsSolutionBuildManager2)ServiceProvider.GetService(typeof(SVsSolutionBuildManager));
+            var solutionService = ServiceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+
+            IVsHierarchy startupProject;
+            sbManager.get_StartupProject(out startupProject);
+
+            sbManager.StartUpdateProjectConfigurations(1, new[] { startupProject }, (uint)VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD, 0);
+
+            return;
+
+            /*
+            // Using DTE causes a progress status to remain after building.
             DTE2 dte = (DTE2)ServiceProvider.GetService(typeof(DTE));
             var sb = (SolutionBuild2) dte.Solution.SolutionBuild;
 
@@ -218,7 +230,7 @@ namespace BuildStartProject
 
             // Activate the output window.
             dte.Windows.Item(EnvDTE.Constants.vsWindowKindOutput).Activate();
-
+            */
 
         }
 
