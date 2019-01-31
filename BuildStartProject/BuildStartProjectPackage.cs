@@ -41,7 +41,7 @@ namespace BuildStartProject
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(BuildStartProjectPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    public sealed class BuildStartProjectPackage : Package
+    public sealed class BuildStartProjectPackage : AsyncPackage
     {
         /// <summary>
         /// BuildStartProjectPackage GUID string.
@@ -65,10 +65,13 @@ namespace BuildStartProject
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
         /// </summary>
-        protected override void Initialize()
+        /// protected:
+        protected override async System.Threading.Tasks.Task InitializeAsync(System.Threading.CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            ThreadHelper.ThrowIfNotOnUIThread();
             BuildStartProject.Initialize(this);
-            base.Initialize();
+            await base.InitializeAsync(cancellationToken, progress);
         }
 
         protected override void Dispose(bool disposing)
