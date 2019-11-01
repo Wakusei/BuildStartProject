@@ -12,6 +12,8 @@ using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE80;
 using EnvDTE;
 using Microsoft.VisualStudio;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BuildStartProject
 {
@@ -188,15 +190,42 @@ namespace BuildStartProject
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            var sbManager = (IVsSolutionBuildManager2)ServiceProvider.GetService(typeof(SVsSolutionBuildManager));
+            // Get the name of all the startup projects
+            DTE2 dte = (DTE2)ServiceProvider.GetService(typeof(DTE));
+            var sb = (SolutionBuild2)dte.Solution.SolutionBuild;
+            var startupProjectNames= ((object[])sb.StartupProjects).Select(n=>(string)n).ToList();
+
+            // Get projects' IVsHierarchy
             var solutionService = ServiceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+            Guid guid= new Guid();
+            solutionService.GetProjectEnum((uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION, ref guid, out IEnumHierarchies ppenum);
+            var projectsArray = new IVsHierarchy[1];
+            var projects = new List<IVsHierarchy>();
+            while (ppenum.Next(1, projectsArray, out uint fetched) == 0)
+            {
+                projects.Add(projectsArray[0]);
+            }
 
-            IVsHierarchy startupProject;
-            sbManager.get_StartupProject(out startupProject);
+            // Match startup project name with IvsHierachy
+            var startupProjects = new List<IVsHierarchy>();
+            for(int p=0; p< projects.Count; ++p)
+            {
+                solutionService.GetUniqueNameOfProject(projects[p], out string uname);
+                if( startupProjectNames.Any(n=>n == uname) )
+                {
+                    startupProjects.Add(projects[p]);
+                }
+            }
 
-            sbManager.StartUpdateProjectConfigurations(1, new[] { startupProject }, (uint)VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD, 0);
+            // Build
+            var sbManager = (IVsSolutionBuildManager2)ServiceProvider.GetService(typeof(SVsSolutionBuildManager));
+            sbManager.StartUpdateProjectConfigurations((uint)startupProjects.Count, startupProjects.ToArray(), (uint)VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD, 0);
 
             return;
+
+            // single startup project
+            //IVsHierarchy startupProject;
+            //sbManager.get_StartupProject(out startupProject);
 
             /*
             // Using DTE causes a progress status to remain after building.
