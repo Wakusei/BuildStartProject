@@ -69,13 +69,14 @@ namespace BuildStartProject
         protected override async System.Threading.Tasks.Task InitializeAsync(System.Threading.CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            ThreadHelper.ThrowIfNotOnUIThread();
             BuildStartProject.Initialize(this);
             await base.InitializeAsync(cancellationToken, progress);
         }
 
         protected override void Dispose(bool disposing)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             base.Dispose(disposing);
 
             BuildStartProject.Instance.Dispose();

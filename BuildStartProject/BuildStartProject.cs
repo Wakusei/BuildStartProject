@@ -14,6 +14,7 @@ using EnvDTE;
 using Microsoft.VisualStudio;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft;
 
 namespace BuildStartProject
 {
@@ -50,6 +51,7 @@ namespace BuildStartProject
         /// <param name="package">Owner package, not null.</param>
         private BuildStartProject(Package package)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             if (package == null)
             {
                 throw new ArgumentNullException("package");
@@ -77,6 +79,7 @@ namespace BuildStartProject
 
         public void Dispose()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             var solutionService = ServiceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
             if (solutionService != null && m_EventSinkCookie != 0)
             {
@@ -190,13 +193,20 @@ namespace BuildStartProject
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             // Get the name of all the startup projects
+            // It's not possible to get multiple startup projects without DTE.
+            // https://stackoverflow.com/questions/60085770/get-all-startup-projects-in-solution
             DTE2 dte = (DTE2)ServiceProvider.GetService(typeof(DTE));
+            Assumes.Present(dte);
             var sb = (SolutionBuild2)dte.Solution.SolutionBuild;
             var startupProjectNames= ((object[])sb.StartupProjects).Select(n=>(string)n).ToList();
 
             // Get projects' IVsHierarchy
             var solutionService = ServiceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+            Assumes.Present(solutionService);
+
             Guid guid= new Guid();
             solutionService.GetProjectEnum((uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION, ref guid, out IEnumHierarchies ppenum);
             var projectsArray = new IVsHierarchy[1];
@@ -206,7 +216,7 @@ namespace BuildStartProject
                 projects.Add(projectsArray[0]);
             }
 
-            // Match startup project name with IvsHierachy
+            // Match the startup project name with IvsHierachy
             var startupProjects = new List<IVsHierarchy>();
             for(int p=0; p< projects.Count; ++p)
             {
@@ -219,7 +229,38 @@ namespace BuildStartProject
 
             // Build
             var sbManager = (IVsSolutionBuildManager2)ServiceProvider.GetService(typeof(SVsSolutionBuildManager));
-            sbManager.StartUpdateProjectConfigurations((uint)startupProjects.Count, startupProjects.ToArray(), (uint)VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD, 0);
+            Assumes.Present(sbManager);
+
+            IVsOutputWindow output = (IVsOutputWindow)ServiceProvider.GetService(typeof(IVsOutputWindow));
+            Assumes.Present(output);
+
+            Guid generalPaneGuid = VSConstants.GUID_BuildOutputWindowPane;
+            IVsOutputWindowPane pane;
+            output.GetPane(generalPaneGuid, out pane);
+
+            IVsProjectCfg[] ppIVsProjectCfg = new IVsProjectCfg[1];
+            sbManager.FindActiveProjectCfg(IntPtr.Zero, IntPtr.Zero, startupProjects.First(), ppIVsProjectCfg);
+
+
+            ppIVsProjectCfg.First().get_BuildableProjectCfg(out IVsBuildableProjectCfg cfg);
+
+            int[] supported = new int[3];
+            int[] ready= new int[3];
+            var ret2 = cfg.QueryStartBuild(0, supported, ready);
+
+            var ret= cfg.StartBuild(pane, VSConstants.VS_BUILDABLEPROJECTCFGOPTS_REBUILD);
+
+    //        int result = sbManager.StartUpdateSpecificProjectConfigurations(
+    //1,
+    //startupProjects.ToArray(),
+    //new uint[] { 0 },
+    //new uint[] { VSConstants.VS_BUILDABLEPROJECTCFGOPTS_BUILD_SELECTION_ONLY },
+    //new uint[] { 0 },
+    //new uint[] { 0 },
+    //(uint)VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD,
+    //0,0);
+
+            //            sbManager.StartUpdateProjectConfigurations((uint)startupProjects.Count, startupProjects.ToArray(), (uint)(VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD |VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_FORCE_UPDATE), 0);
 
             return;
 

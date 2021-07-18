@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="BuildStartProject.dev.0532a8bb-2927-47cc-9eeb-021abb344fa4" Version="1.1.0" Language="en-US" Publisher="Sen Harada" />
+        <Identity Id="BuildStartProject.dev.0532a8bb-2927-47cc-9eeb-021abb344fa4" Version="1.1.1" Language="en-US" Publisher="Sen Harada" />
         <DisplayName>Build Only Startup Project</DisplayName>
         <Description xml:space="preserve">Build only a startup project, not the whole solution regardless of the current project in the editor. Dependent projects are also built.</Description>
         <MoreInfo>https://marketplace.visualstudio.com/items?itemName=SenHarada.BuildOnlyStartupProject</MoreInfo>
@@ -11,7 +11,12 @@
         <Tags>Build</Tags>
     </Metadata>
     <Installation>
-        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0,17.0)" />
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0, 18.0)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Version="[14.0,18.0)" Id="Microsoft.VisualStudio.Community">
+            <ProductArchitecture>x86</ProductArchitecture>
+        </InstallationTarget>
     </Installation>
     <Dependencies>
         <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
