@@ -230,37 +230,7 @@ namespace BuildStartProject
             // Build
             var sbManager = (IVsSolutionBuildManager2)ServiceProvider.GetService(typeof(SVsSolutionBuildManager));
             Assumes.Present(sbManager);
-
-            IVsOutputWindow output = (IVsOutputWindow)ServiceProvider.GetService(typeof(IVsOutputWindow));
-            Assumes.Present(output);
-
-            Guid generalPaneGuid = VSConstants.GUID_BuildOutputWindowPane;
-            IVsOutputWindowPane pane;
-            var ret= output.GetPane(generalPaneGuid, out pane);
-
-            IVsProjectCfg[] ppIVsProjectCfg = new IVsProjectCfg[1];
-            sbManager.FindActiveProjectCfg(IntPtr.Zero, IntPtr.Zero, startupProjects.First(), ppIVsProjectCfg);
-
-
-            ppIVsProjectCfg.First().get_BuildableProjectCfg(out IVsBuildableProjectCfg cfg);
-
-            int[] supported = new int[3];
-            int[] ready= new int[3];
-            var ret2 = cfg.QueryStartBuild(0, supported, ready);
-
-            ret= cfg.StartBuild(pane, VSConstants.VS_BUILDABLEPROJECTCFGOPTS_REBUILD);
-
-    //        int result = sbManager.StartUpdateSpecificProjectConfigurations(
-    //1,
-    //startupProjects.ToArray(),
-    //new uint[] { 0 },
-    //new uint[] { VSConstants.VS_BUILDABLEPROJECTCFGOPTS_BUILD_SELECTION_ONLY },
-    //new uint[] { 0 },
-    //new uint[] { 0 },
-    //(uint)VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD,
-    //0,0);
-
-            //            sbManager.StartUpdateProjectConfigurations((uint)startupProjects.Count, startupProjects.ToArray(), (uint)(VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD |VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_FORCE_UPDATE), 0);
+            sbManager.StartUpdateProjectConfigurations((uint)startupProjects.Count, startupProjects.ToArray(), (uint)VSSOLNBUILDUPDATEFLAGS.SBF_OPERATION_BUILD, 0);
 
             return;
 
