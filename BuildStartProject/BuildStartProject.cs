@@ -236,7 +236,7 @@ namespace BuildStartProject
 
             Guid generalPaneGuid = VSConstants.GUID_BuildOutputWindowPane;
             IVsOutputWindowPane pane;
-            output.GetPane(generalPaneGuid, out pane);
+            var ret= output.GetPane(generalPaneGuid, out pane);
 
             IVsProjectCfg[] ppIVsProjectCfg = new IVsProjectCfg[1];
             sbManager.FindActiveProjectCfg(IntPtr.Zero, IntPtr.Zero, startupProjects.First(), ppIVsProjectCfg);
@@ -248,7 +248,7 @@ namespace BuildStartProject
             int[] ready= new int[3];
             var ret2 = cfg.QueryStartBuild(0, supported, ready);
 
-            var ret= cfg.StartBuild(pane, VSConstants.VS_BUILDABLEPROJECTCFGOPTS_REBUILD);
+            ret= cfg.StartBuild(pane, VSConstants.VS_BUILDABLEPROJECTCFGOPTS_REBUILD);
 
     //        int result = sbManager.StartUpdateSpecificProjectConfigurations(
     //1,
